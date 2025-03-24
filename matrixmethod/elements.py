@@ -68,12 +68,12 @@ class Element:
 
         self.L = np.sqrt((self.nodes[1].x - self.nodes[0].x)**2.0 + (self.nodes[1].z - self.nodes[0].z)**2.0)
 
-        alpha = np.arctan2((self.nodes[1].z - self.nodes[0].z), (self.nodes[1].x - self.nodes[0].x))
+        alpha = np.arctan2( - (self.nodes[1].z - self.nodes[0].z) , (self.nodes[1].x - self.nodes[0].x))
 
         T = np.zeros((6, 6))
 
         T[0, 0] = T[1, 1] = T[3, 3] = T[4, 4] = np.cos(alpha)
-        T[0, 1] = T[3, 4] = - np.sin(alpha)
+        T[0, 1] = T[3, 4] = -np.sin(alpha)
         T[1, 0] = T[4, 3] = np.sin(alpha)
         T[2, 2] = T[5, 5] = 1
 
@@ -142,9 +142,9 @@ class Element:
         k[2, 4] = k[4, 2] = k[4, 5] = k[5, 4] = 6.0 * EI / L / L
         k[2, 2] = k[5, 5] = 4.0 * EI / L
         k[2, 5] = k[5, 2] = 2.0 * EI / L
-        
-        return np.matmul(np.matmul(self.Tt, k), self.T)
 
+        return np.matmul(np.matmul(self.Tt, k), self.T)
+    
     def add_distributed_load(self, q):
         """
         Adds a distributed load to the element.
@@ -159,12 +159,12 @@ class Element:
         l = self.L
         self.q = np.array(q)
 
-        self.local_element_load # =[YOUR CODE HERE, , , , , ]
+        self.local_element_load = [0.5 * q[0] * l, 0.5 * q[1] * l, -1.0 / 12.0 * q[1] * l * l, 0.5 * q[0] * l, 0.5 * q[1] * l, 1.0 / 12.0 * q[1] * l * l]
 
-        global_element_load #YOUR CODE HERE
+        global_element_load = np.matmul(self.Tt, np.array(self.local_element_load))
 
-        self.nodes[0].add_load #YOUR CODE HERE
-        self.nodes[1].add_load #YOUR CODE HERE
+        self.nodes[0].add_load(global_element_load[0:3])
+        self.nodes[1].add_load(global_element_load[3:6])
 
     def bending_moments(self, u_global, num_points=2):
         """
@@ -184,11 +184,33 @@ class Element:
 
         local_x = np.linspace(0.0, l, num_points)
 
-        local_disp #YOUR CODE HERE
+        local_disp = np.matmul(self.T, u_global)
 
-        M #YOUR CODE HERE
+        w_1 = local_disp[1]
+        phi_1 = local_disp[2]
+        w_2 = local_disp[4]
+        phi_2 = local_disp[5]
+
+        M = (-l ** 5.0 * q + 6.0 * l ** 4.0 * q * local_x
+             - 6.0 * q * local_x * local_x * l ** 3.0 - 48.0 * (phi_1 + phi_2 / 2.0) * EI * l ** 2.0
+             + 72.0 * EI * ((phi_1 + phi_2) * local_x + w_1 - w_2) * l - 144.0 * local_x * EI * (w_1 - w_2)) / 12.0 / l ** 3.0
         
         return M
+    def shear_force(self, u_global, num_points=2):
+          l = self.L
+          q = self.q[1]
+          EI = self.EI
+
+          local_x = np.linspace(0.0, l, num_points)
+          local_disp = np.matmul(self.T, u_global)
+
+          w_1 = local_disp[1]
+          phi_1 = local_disp[2]
+          w_2 = local_disp[4]
+          phi_2 = local_disp[5]
+
+          V = (q * l) / 2 -q * local_x +(6 * EI * (phi_1 + phi_2)) / (l**2) + (-12 * EI * (w_1 - w_2)) / (l**3)
+          return V
     
     def full_displacement (self, u_global, num_points=2):
         """
@@ -201,11 +223,26 @@ class Element:
         Returns:
             numpy.ndarray: Array of displacement along the element.
         """
-        #YOUR CODE HERE
+        L = self.L
+        q = self.q[1]
+        q_x = self.q[0]
+        EI= self.EI
+        EA = self.EA
 
-        u #YOUR CODE HERE
-        w #YOUR CODE HERE
+        x = np.linspace ( 0.0, L, num_points )
 
+        ul = np.matmul ( self.T, u_global )
+
+        u_1   = ul[0]
+        w_1   = ul[1]
+        phi_1 = ul[2]
+        u_2   = ul[3]
+        w_2   = ul[4]
+        phi_2 = ul[5]
+
+        u = q_x*(-L*x/(2*EA) + x**2/(2*EA)) + u_1*(1 - x/L) + u_2*x/L
+        w = phi_1*(-x + 2*x**2/L - x**3/L**2) + phi_2*(x**2/L - x**3/L**2) + q*(L**2*x**2/(24*EI) - L*x**3/(12*EI) + x**4/(24*EI)) + w_1*(1 - 3*x**2/L**2 + 2*x**3/L**3) + w_2*(3*x**2/L**2 - 2*x**3/L**3)
+        
         return u, w
     
     def plot_moment_diagram (self, u_elem, num_points=10, global_c=False, scale=1.0):
