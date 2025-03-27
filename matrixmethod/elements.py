@@ -196,21 +196,7 @@ class Element:
              + 72.0 * EI * ((phi_1 + phi_2) * local_x + w_1 - w_2) * l - 144.0 * local_x * EI * (w_1 - w_2)) / 12.0 / l ** 3.0
         
         return M
-    def shear_force(self, u_global, num_points=2):
-          l = self.L
-          q = self.q[1]
-          EI = self.EI
-
-          local_x = np.linspace(0.0, l, num_points)
-          local_disp = np.matmul(self.T, u_global)
-
-          w_1 = local_disp[1]
-          phi_1 = local_disp[2]
-          w_2 = local_disp[4]
-          phi_2 = local_disp[5]
-
-          V = (q * l) / 2 -q * local_x +(6 * EI * (phi_1 + phi_2)) / (l**2) + (-12 * EI * (w_1 - w_2)) / (l**3)
-          return V
+        
     
     def full_displacement (self, u_global, num_points=2):
         """
@@ -360,3 +346,44 @@ class Element:
         The string includes the values of the node1, node2 attributes.
         """
         return f"Element connecting:\nnode #1:\n {self.nodes[0]}\nwith node #2:\n {self.nodes[1]}"
+    
+    def local_stiffness(self):
+        """
+        Calculate the stiffness matrix of the element.
+
+        Returns:
+        np.ndarray: The stiffness matrix of the element.
+        """
+        k = np.zeros((6, 6))
+
+        EA = self.EA
+        EI = self.EI
+        L = self.L
+
+        # Extension contribution
+
+        k[0, 0] = k[3, 3] = EA / L
+        k[3, 0] = k[0, 3] = -EA / L
+
+        # Bending contribution
+
+        k[1, 1] = k[4, 4] = 12.0 * EI / L / L / L
+        k[1, 4] = k[4, 1] = -12.0 * EI / L / L / L
+        k[1, 2] = k[2, 1] = k[1, 5] = k[5, 1] = -6.0 * EI / L / L
+        k[2, 4] = k[4, 2] = k[4, 5] = k[5, 4] = 6.0 * EI / L / L
+        k[2, 2] = k[5, 5] = 4.0 * EI / L
+        k[2, 5] = k[5, 2] = 2.0 * EI / L
+        return k
+    
+    # def nodal_forces(self, u_global):
+
+    # # Extract element displacement in global coordinates
+    #     u_elem = u_global[self.global_dofs()]
+    
+    # # Transform global displacements to local coordinates
+    #     u_local = np.matmul(self.T, u_elem)
+    
+    # # Compute local nodal forces
+    #     nodal_elem = np.matmul(self.local_stiffness(), u_local) - self.local_element_load
+    
+    #     return nodal_elem
