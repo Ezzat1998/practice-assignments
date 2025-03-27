@@ -374,16 +374,4 @@ class Element:
         k[2, 2] = k[5, 5] = 4.0 * EI / L
         k[2, 5] = k[5, 2] = 2.0 * EI / L
         return k
-    
-    # def nodal_forces(self, u_global):
 
-    # # Extract element displacement in global coordinates
-    #     u_elem = u_global[self.global_dofs()]
-    
-    # # Transform global displacements to local coordinates
-    #     u_local = np.matmul(self.T, u_elem)
-    
-    # # Compute local nodal forces
-    #     nodal_elem = np.matmul(self.local_stiffness(), u_local) - self.local_element_load
-    
-    #     return nodal_elem
