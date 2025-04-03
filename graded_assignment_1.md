@@ -79,3 +79,12 @@ The resluts are showen in meter [$m$] .
 ![a figure](./figures/Moment_diagram.png)
 
 ## Question 7:  Provide a figure of a free body diagram of the full structure in which you show all the forces working on the structure (including support reactions) with numerical values from your code. This specific figure can be hand drawn.
+
+
+## Question 8: Provide a figure of a free body diagram of the indicated node with numerical values from your code. This specific figure can be hand drawn. If you implement code for this in the matrixmethod package, make sure to perform sanity checks
+
+
+## Question 9: Comment on any potential mistakes you observed in your final answers.
+
+
+## Question 10: If you had the time to expand this Matrix Method with an additional feature, what would that be?
